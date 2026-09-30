@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowUpDown, Check } from 'lucide-react'
 import { formatCLP, suggestPayoutPct, usdFromClp } from '@/lib/utils'
 
@@ -10,6 +11,7 @@ const DEMO_FX = 900
 type Side = 'clp' | 'usd'
 
 export function ExchangeForm() {
+  const router = useRouter()
   const [side, setSide] = useState<Side>('clp')
   const [raw, setRaw] = useState('')
 
@@ -31,7 +33,7 @@ export function ExchangeForm() {
         </p>
       </div>
 
-      <form className="space-y-4 p-6" onSubmit={(e) => e.preventDefault()}>
+      <form className="space-y-4 p-6" onSubmit={(e) => { e.preventDefault(); if (valid) router.push('/verificacion') }}>
         <div>
           <label htmlFor="monto" className="text-xs font-medium uppercase tracking-wider text-ink-soft">
             {side === 'clp' ? 'Quiero recibir' : 'Voy a pagar'}

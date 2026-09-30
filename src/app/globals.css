@@ -17,6 +17,7 @@
   --color-warning:       #D97706;
 
   --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --font-serif: var(--font-plex-serif), Georgia, serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
@@ -35,3 +36,5 @@ body {
   outline: 2px solid var(--color-lime);
   outline-offset: 2px;
 }
+
+em.font-serif { font-style: italic; font-weight: 500; }

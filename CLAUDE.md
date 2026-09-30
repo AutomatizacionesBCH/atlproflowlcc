@@ -31,19 +31,25 @@ Navegación del cliente (sidebar): **Nueva operación · Mis operaciones · Ajus
 
 ## Verificación de identidad (KYC) — diseño
 
-Proveedor propuesto: **Didit** (hosted sessions; es el que usa AtlasCash). Alternativa: verificación manual con los documentos que ya recolecta `docslcc`. Decidir antes de implementar.
+Se hace **después de la primera cotización**, con interfaz propia (no la página hospedada de Didit), igual que AtlasCash: el cliente fotografía su documento y se toma una selfie dentro de nuestra app, y el **servidor** llama a las APIs standalone de Didit (`x-api-key`, solo backend, `https://verification.didit.me/v3`).
 
-Flujo con Didit (API verificada en docs.didit.me, revisar la versión vigente al implementar):
-1. Server Action/Route Handler crea la sesión: `POST https://verification.didit.me/v3/session/` con header `x-api-key` (**solo desde backend**), body `{ workflow_id, vendor_data: <customer_id>, callback: <url de retorno>, contact_details: { email }, language: 'es' }`. Con `vendor_data` estable, Didit devuelve la sesión existente si hay una sin terminar y permite detectar duplicados.
-2. Se guarda `session_id` + estado `Not Started` en `kyc_verifications` y se redirige al cliente a la `url` de la respuesta (verificación alojada por Didit).
-3. **Webhook** `POST /api/webhooks/didit` (evento `status.updated`): leer el **body crudo**, verificar `X-Signature-V2` (HMAC-SHA256 con el shared secret), rechazar si `abs(now - X-Timestamp) > 300 s`, comparar con `timingSafeEqual`, procesar de forma **idempotente por `event_id`**, responder 2xx de inmediato. Estados: `Approved` / `Declined` / en revisión.
-4. La aprobación **nunca** se decide desde el navegador: solo el webhook (o un `GET` a la sesión desde el servidor) cambia `kyc_status`. La página de retorno solo consulta el estado.
-5. Antes de redirigir, mostrar **consentimiento y aviso de privacidad** propios (Didit indica que el consentimiento se maneja en nuestro UX). Registrar fecha/versión aceptada.
-6. **Un RUT = una cuenta:** tras `Approved`, extraer el RUT del documento, normalizarlo (`formatRutForStorage`) y guardarlo con restricción `UNIQUE`. Si ya existe en otra cuenta → marcar `en_revision` y avisar al equipo; no aprobar automáticamente.
-7. Verificar que el **nombre del documento coincide con el titular de la cuenta bancaria** declarada (regla de negocio: transferencias solo al titular).
-8. Reverificación: si el equipo marca riesgo (`tag riesgo`) o cambian la cuenta bancaria, se exige nueva verificación.
+Pantallas (`src/app/verificacion/`, `src/components/kyc/`): introducción ("Vamos a validar tu identidad") → paso 1 Frente → paso 2 Dorso → paso 3 Selfie (cada paso con consejos, vista previa, "Usar cámara" y "Subir desde mi galería") → "Verificando…" → resultado (aprobado / en revisión / rechazado con reintento). Las fotos se comprimen en el navegador (1600 px, JPEG) antes de subir.
 
-Datos sensibles (cédula, selfies, tarjetas): **no guardarlos en nuestra BD**. Guardar solo `session_id`, estado, RUT normalizado y nombre. Lo demás vive en Didit; si se suben archivos propios, bucket **privado** con URLs firmadas (como `documentos-solicitudes`).
+Flujo servidor (`POST /api/kyc/verify`, `src/lib/kyc/`):
+1. Exige sesión. Máx. **3 intentos por cliente cada 24 h** (cada llamada cuesta créditos y es vector de abuso). Falla de Didit/nuestra no cuenta como intento.
+2. `POST /id-verification/` (frente + dorso) → extrae nombre, fecha de nacimiento, número y retrato del documento.
+3. `POST /passive-liveness/` (selfie) → prueba de vida. Umbral `KYC_LIVENESS_MIN` (default 60).
+4. `POST /face-match/` (selfie vs. retrato del documento). Umbral `KYC_FACE_MATCH_MIN` (default 60). **Calibrar ambos umbrales con pruebas reales.**
+5. `decideKyc()` (`lib/kyc/decide.ts`, función pura) decide: `rechazado` (documento vencido, biometría no pasa, menor de 18) → el cliente puede reintentar; `en_revision` (biometría OK pero RUT no legible/inválido, RUT ya registrado en otra cuenta, posible duplicado) → lo mira una persona; `aprobado`.
+6. Se guarda el resultado en `kyc_verifications` y `customer_profiles.kyc_status`/`rut` con service_role. La aprobación **nunca** se decide en el navegador.
+
+Pendientes y notas:
+- **RUT de la cédula chilena:** no está verificado si Didit lo devuelve en `personal_number` o en `document_number`; el código prueba ambos y usa el primero que pase `validateRut`. Confirmar con una cédula real.
+- Las imágenes quedan guardadas en Didit (`save_api_request` por defecto) como evidencia AML; nosotros **no** las guardamos. Decidir la política de retención con asesoría legal.
+- Ruta `/privacidad` (enlazada en la introducción) aún no existe.
+- Falta: comparar el nombre del documento con el titular de la cuenta bancaria; reverificar si se marca riesgo o cambia la cuenta; webhook de Didit solo si luego se usan sesiones hospedadas o revisión manual en su consola.
+- Con sesiones hospedadas de Didit (alternativa más simple, sin UI propia) el flujo sería `POST /v3/session/` + webhook `status.updated` con `X-Signature-V2`.
+- **Migración `supabase/031_customer_kyc.sql` SIN APLICAR.** Corrige un riesgo de seguridad del Supabase compartido: con registro público, el trigger `handle_new_user` (026) acepta `role` desde metadata editable por el usuario y el proxy de ProFlow usa `role ?? 'operador'` → un cliente podría llegar a ser operador. Revisarla junto con el fallback del proxy de ProFlow antes de habilitar registros.
 
 ## Reglas de negocio (propias — heredadas de ProFlow OS)
 
@@ -79,7 +85,7 @@ Mismo que ProFlow OS, para poder reutilizar código:
 
 - Next.js 16 App Router + Turbopack, React 19, TypeScript, Tailwind CSS 4 (`@import "tailwindcss"` + `@theme`; **sin** `tailwind.config.ts`).
 - Supabase (`@supabase/ssr`, `@supabase/supabase-js`). Variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (solo servidor).
-- KYC: `DIDIT_API_KEY`, `DIDIT_WORKFLOW_ID`, `DIDIT_WEBHOOK_SECRET` (solo servidor, nunca `NEXT_PUBLIC_`).
+- KYC: `DIDIT_API_KEY`, `KYC_LIVENESS_MIN`, `KYC_FACE_MATCH_MIN` (solo servidor, nunca `NEXT_PUBLIC_`).
 - Correo transaccional: Gmail SMTP con nodemailer (`GMAIL_USER`, `GMAIL_APP_PASSWORD`) como en ProFlow, para comprobantes.
 - Deploy: Docker standalone en EasyPanel (como `docslcc/`: `output: 'standalone'`, Dockerfile multi-stage Alpine).
 - Antes de escribir código: leer la guía correspondiente en `node_modules/next/dist/docs/` (este Next no es el que conoces; ver `AGENTS.md`).
@@ -148,9 +154,9 @@ src/
 - [x] Carpeta `ATL-Proflow/` creada con logos, íconos y este `CLAUDE.md`.
 - [x] Repo git propio (local; `ATL-Proflow/` ignorado en el `.gitignore` de ProFlow). Falta crear el remoto en GitHub (no hay `gh` en esta máquina).
 - [x] Scaffolding Next.js 16 + Tailwind 4 + Supabase, tokens de marca, sidebar y cotizador de muestra (`/exchange`, tasa fija de demo hasta tener `fx_rates`). `npm run build` y `lint` pasan.
-- [ ] Decidir proveedor KYC (Didit vs. manual).
+- [x] Proveedor KYC: Didit (standalone APIs).
 - [ ] Login por email OTP + `proxy.ts` + `customer_profiles`.
-- [ ] Flujo KYC (sesión, webhook, pantallas de estado).
+- [x] Flujo KYC con UI propia (frente/dorso/selfie) + API `/api/kyc/verify` + `decideKyc`. Sin probar contra Didit real (faltan `DIDIT_API_KEY` y login).
 - [ ] Cotizador `/exchange` con `fx_rates` y reglas de payout.
 - [ ] Solicitud de operación → conversión a operación real en ProFlow OS.
 - [ ] Mis operaciones + comprobante.

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google'
+import { IBM_Plex_Sans, IBM_Plex_Mono, IBM_Plex_Serif } from 'next/font/google'
 import './globals.css'
 
 const plexSans = IBM_Plex_Sans({
@@ -13,6 +13,13 @@ const plexMono = IBM_Plex_Mono({
   variable: '--font-plex-mono',
 })
 
+const plexSerif = IBM_Plex_Serif({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  style: ['italic'],
+  variable: '--font-plex-serif',
+})
+
 export const metadata: Metadata = {
   title: 'La Caja Chica | Cambia tu cupo en dólares',
   description: 'Cotiza y cambia el cupo en dólares de tu tarjeta por pesos chilenos, desde tu cuenta.',
@@ -23,7 +30,7 @@ export const viewport: Viewport = { themeColor: '#043D35' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${plexSans.variable} ${plexMono.variable}`}>
+    <html lang="es" className={`${plexSans.variable} ${plexMono.variable} ${plexSerif.variable}`}>
       <body>{children}</body>
     </html>
   )
