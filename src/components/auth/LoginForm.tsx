@@ -15,7 +15,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function friendly(message: string): string {
   const m = message.toLowerCase()
-  if (m.includes('rate limit') || m.includes('security purposes')) return 'Pediste demasiados códigos. Espera un momento e inténtalo de nuevo.'
+  const secs = m.match(/after (\d+) seconds?/)
+  if (secs) return `Ya te enviamos un código hace un momento. Espera ${secs[1]} segundos para pedir otro, o usa el que ya recibiste con “Ya tengo un código”.`
+  if (m.includes('rate limit') || m.includes('security purposes')) {
+    return 'Se alcanzó el límite de correos por ahora. Si ya recibiste un código, úsalo con “Ya tengo un código”; si no, inténtalo más tarde.'
+  }
   if (m.includes('expired') || m.includes('invalid')) return 'El código no es válido o ya venció. Revisa el correo o pide uno nuevo.'
   if (m.includes('captcha')) return 'No pudimos validar que eres una persona. Recarga la página e inténtalo de nuevo.'
   return 'No pudimos completar la acción. Inténtalo de nuevo.'
@@ -163,6 +167,15 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-brand font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-ink-faint"
       >
         {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <>Continuar <ArrowRight className="size-4" aria-hidden /></>}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => { setError(null); setCode(''); setStep('code') }}
+        disabled={!EMAIL_RE.test(email.trim())}
+        className="text-sm font-medium text-brand underline disabled:text-ink-faint disabled:no-underline"
+      >
+        Ya tengo un código
       </button>
 
       <p className="flex items-start gap-2 text-xs text-ink-faint">
