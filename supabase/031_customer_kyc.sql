@@ -62,3 +62,9 @@ begin
   return new;
 end;
 $$;
+
+-- Idempotente: en el Supabase compartido reemplaza el trigger de la 026; en uno nuevo lo crea.
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
