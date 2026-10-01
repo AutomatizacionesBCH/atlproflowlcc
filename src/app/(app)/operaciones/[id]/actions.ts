@@ -61,6 +61,7 @@ export async function confirmOperationAction(input: {
     usd: formatUSD(Number(req.amount_usd)), clp: formatCLP(Number(req.quoted_clp)), bank,
   })
 
+  revalidatePath('/')
   revalidatePath('/operaciones')
   return { ok: true }
 }
@@ -87,5 +88,5 @@ export async function requoteAction(id: string): Promise<Result> {
 
   await admin.from('operation_requests').update({ status: 'descartado', notes: 'Reemplazada por recotización' })
     .eq('id', id).eq('customer_id', user.id).eq('status', 'cotizada')
-  return { next: `/operaciones/${data.id}` }
+  return { next: `/operacion/${data.id}` }
 }

@@ -78,7 +78,7 @@ export function ConfirmPanel({ id, expiresAt, kycApproved, holderName, holderRut
       <div className="space-y-4 rounded-2xl border border-line bg-white p-6">
         <p className="font-medium">Verifica tu identidad para continuar</p>
         <p className="text-sm text-ink-soft">Tu cotización se mantiene {mm}:{ss} min. Verificarte toma solo un par de minutos.</p>
-        <Link href={`/verificacion?next=${encodeURIComponent(`/operaciones/${id}`)}`} className="flex h-12 w-full items-center justify-center rounded-lg bg-brand font-medium text-white hover:bg-brand-hover">
+        <Link href={`/verificacion?next=${encodeURIComponent(`/operacion/${id}`)}`} className="flex h-12 w-full items-center justify-center rounded-lg bg-brand font-medium text-white hover:bg-brand-hover">
           Verificar mi identidad
         </Link>
       </div>

@@ -15,6 +15,6 @@ export async function requireAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  if (!(await isAdminEmail(user.email))) redirect('/exchange')
+  if (!(await isAdminEmail(user.email))) redirect('/')
   return { user, admin: createAdminClient() }
 }

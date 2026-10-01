@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Rutas que no requieren sesión.
-const PUBLIC = ['/login', '/privacidad', '/terminos']
+const PUBLIC = ['/', '/login', '/privacidad', '/terminos']
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -25,19 +25,20 @@ export async function proxy(request: NextRequest) {
 
   // getUser() valida el token con Supabase (getSession() solo lee la cookie y no es de fiar).
   const { data: { user } } = await supabase.auth.getUser()
-  const isPublic = PUBLIC.some(p => pathname === p || pathname.startsWith(`${p}/`))
+  const isPublic = PUBLIC.some(p => pathname === p || (p !== '/' && pathname.startsWith(`${p}/`)))
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()
+    const original = pathname + request.nextUrl.search
     url.pathname = '/login'
     url.search = ''
-    if (pathname !== '/') url.searchParams.set('redirectTo', pathname)
+    url.searchParams.set('redirectTo', original) // conserva ?side=&amount= de la cotización
     return NextResponse.redirect(url)
   }
 
   if (user && pathname === '/login') {
     const url = request.nextUrl.clone()
-    url.pathname = '/exchange'
+    url.pathname = '/'
     url.search = ''
     return NextResponse.redirect(url)
   }

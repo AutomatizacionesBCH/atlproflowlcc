@@ -8,6 +8,12 @@ Portal donde **cada cliente crea su propia cuenta**, verifica su identidad, **co
 - Idioma de la interfaz: español (Chile). Moneda: CLP y USD.
 - Relación con ProFlow OS: **mismo proyecto Supabase, misma base de datos** (regla de ProFlow: una sola versión viva, una sola BD). ATL-Proflow es una app aparte (como `docslcc/`) que lee/escribe las tablas compartidas; el equipo sigue operando desde ProFlow OS.
 
+## Flujo y módulos (decisión del negocio, octubre 2026)
+
+- **Primera página (`/`) = cotizador de ida y vuelta CLP ↔ USD, público (sin cuenta)**, con nuestras reglas de precio (payout por tramo 78–81 %). Al pulsar Continuar pasa a la **fase de identidad**: correo + código (`/login`) → `/continuar` crea la cotización con la tasa vigente → verificación con documento (`/verificacion`) → confirmar con cuenta bancaria (`/operacion/[id]`).
+- **Solo 2 módulos para el cliente:** (1) **Nueva operación**: cotiza y avanza todo el proceso, incluidas las operaciones en curso (`/`, `/operacion/[id]`, `/verificacion`); (2) **Mis operaciones** (`/operaciones`): únicamente las operaciones **finalizadas** (completadas o anuladas), con su detalle y comprobante. Los datos personales y cuentas (`/ajustes`) se abren desde el correo del pie, no son un módulo.
+- **Tasa automática, sin publicar nada** (`lib/portal/fx.ts`): se usa el **menor** entre el dólar observado (mindicador.cl) y una referencia de mercado (open.er-api.com). Si las fuentes difieren más de 3 % o ninguna responde, no se cotiza. Bloomberg no tiene fuente gratuita automatizable: si se contrata un feed, agregarlo como tercera fuente. `/admin/tasa` es de solo lectura + interruptor de pausa de emergencia (migración 035). Cada cotización guarda la tasa usada (`quoted_fx`).
+
 ## Cómo opera el modelo (extraído de AtlasCash)
 
 1. **Acceso solo con email.** El cliente ingresa su email; si no existe se crea la cuenta, si existe se inicia sesión (una sola pantalla: "Accede o crea tu cuenta en segundos"). Sin contraseña: código OTP de 6 dígitos por correo.
@@ -55,7 +61,7 @@ Pendientes y notas:
 
 Fuente: `../PROJECT_RULES.md` y `../src/lib/utils.ts`. Si difieren, manda ProFlow OS.
 
-- **Tipo de cambio:** hoy es de ingreso manual y se usa el **menor entre dólar observado y Bloomberg**. El cotizador del cliente debe leer una tasa publicada por el equipo (tabla `fx_rates`, con vigencia), **nunca** calcularla en el navegador.
+- **Tipo de cambio:** automático (ver "Flujo y módulos"): menor entre las fuentes disponibles. Se calcula siempre en el servidor; el navegador solo muestra una vista previa. (La tabla `fx_rates` y la publicación manual quedaron sin uso.)
 - **Payout al cliente (% del bruto):** < USD 1.000 → 78 % · 1.000–2.499 → 79 % · 2.500–4.999 → 80 % · ≥ 5.000 → 81 % (`suggestPayoutPct`). El cliente ve solo lo que recibe ("tasa efectiva", "sin comisión oculta"), **nunca** los fees internos ni la utilidad.
 - **Cálculo:** `gross_clp = usd × fx`, `clp_a_pagar = gross_clp × payout%` (`calcOperation`). Reutilizar esa función, no duplicarla.
 - **Límite por operación:** definir (AtlasCash usa USD 3.000 y permite varias operaciones). Configurable en BD, no hardcodeado.

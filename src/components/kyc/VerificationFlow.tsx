@@ -15,7 +15,7 @@ const STEPS: { kind: StepKind; label: string }[] = [
 type Result = { status: 'aprobado' | 'en_revision' | 'rechazado'; message: string; attemptsLeft?: number }
 type Phase = 'intro' | 'capture' | 'sending' | 'done'
 
-export function VerificationFlow({ next = '/exchange' }: { next?: string }) {
+export function VerificationFlow({ next = '/' }: { next?: string }) {
   const [phase, setPhase] = useState<Phase>('intro')
   const [step, setStep] = useState(0)
   const [photos, setPhotos] = useState<Record<StepKind, File | null>>({ front: null, back: null, selfie: null })

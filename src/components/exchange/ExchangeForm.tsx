@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowUpDown, Check, Loader2 } from 'lucide-react'
 import { formatCLP, formatUSD } from '@/lib/utils'
 import { quoteFromClp, quoteFromUsd } from '@/lib/pricing'
-import { createQuoteAction } from '@/app/(app)/exchange/actions'
+import { createQuoteAction } from '@/app/quote-actions'
 
 type Side = 'clp' | 'usd'
 
@@ -16,7 +16,7 @@ function parseAmount(raw: string, side: Side): number {
   return Number.isFinite(n) ? n : 0
 }
 
-export function ExchangeForm({ fx, minUsd, maxUsd }: { fx: number; minUsd: number; maxUsd: number }) {
+export function ExchangeForm({ fx, minUsd, maxUsd, authed }: { fx: number; minUsd: number; maxUsd: number; authed: boolean }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [side, setSide] = useState<Side>('clp')
@@ -36,6 +36,11 @@ export function ExchangeForm({ fx, minUsd, maxUsd }: { fx: number; minUsd: numbe
     e.preventDefault()
     if (!valid || pending) return
     setError(null)
+    if (!authed) {
+      // Sin sesión: se pasa a la fase de identidad (correo + código); la cotización se crea al volver, con la tasa vigente.
+      const back = `/continuar?side=${side}&amount=${side === 'usd' ? value.toFixed(2) : Math.round(value)}`
+      return router.push(`/login?redirectTo=${encodeURIComponent(back)}`)
+    }
     start(async () => {
       const res = await createQuoteAction({ side, amount: value })
       if ('error' in res) return setError(res.error)
@@ -61,8 +66,8 @@ export function ExchangeForm({ fx, minUsd, maxUsd }: { fx: number; minUsd: numbe
               id="monto"
               inputMode={side === 'clp' ? 'numeric' : 'decimal'}
               placeholder={side === 'clp' ? '0' : '0,00'}
-              value={raw}
-              onChange={e => setRaw(e.target.value.replace(side === 'clp' ? /[^\d]/g : /[^\d.,]/g, ''))}
+              value={side === 'clp' && raw ? Number(raw).toLocaleString('es-CL') : raw}
+              onChange={e => setRaw(e.target.value.replace(side === 'clp' ? /\D/g : /[^\d.,]/g, '').slice(0, 12))}
               className="h-12 flex-1 rounded-lg border border-line-strong px-4 text-right font-mono text-lg"
             />
             <span className="w-10 font-semibold">{side === 'clp' ? 'CLP' : 'USD'}</span>
@@ -112,7 +117,7 @@ export function ExchangeForm({ fx, minUsd, maxUsd }: { fx: number; minUsd: numbe
           {pending ? <Loader2 className="size-5 animate-spin" aria-hidden /> : 'Continuar'}
         </button>
         <p className="text-center text-xs text-ink-faint">
-          Se requerirá verificar tu identidad para continuar. Solo se permite una cuenta por RUT.
+          Para continuar verificaremos tu identidad. Solo se permite una cuenta por RUT.
         </p>
       </form>
     </div>

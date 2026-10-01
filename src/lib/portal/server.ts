@@ -2,10 +2,11 @@ import 'server-only'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getMarketRate } from '@/lib/portal/fx'
 
-export type Settings = { min_usd: number; max_usd_per_operation: number; quote_ttl_seconds: number; rate_max_age_minutes: number }
+export type Settings = { min_usd: number; max_usd_per_operation: number; quote_ttl_seconds: number; quotes_paused: boolean }
 
-const DEFAULT_SETTINGS: Settings = { min_usd: 1, max_usd_per_operation: 3000, quote_ttl_seconds: 300, rate_max_age_minutes: 180 }
+const DEFAULT_SETTINGS: Settings = { min_usd: 1, max_usd_per_operation: 3000, quote_ttl_seconds: 300, quotes_paused: false }
 
 /** Sesión + cliente admin. Toda consulta con admin DEBE filtrar por customer_id = user.id. */
 export async function requireCustomer() {
@@ -24,23 +25,14 @@ export async function getSettings(): Promise<Settings> {
     min_usd: Number(data.min_usd),
     max_usd_per_operation: Number(data.max_usd_per_operation),
     quote_ttl_seconds: data.quote_ttl_seconds,
-    rate_max_age_minutes: data.rate_max_age_minutes,
+    quotes_paused: !!data.quotes_paused,
   } : DEFAULT_SETTINGS
 }
 
-/** Última tasa vigente y no vencida por antigüedad; null si no hay (no se cotiza con tasas viejas). */
+/** Tasa vigente (automática). null = no se puede cotizar: pausa de emergencia, fuentes caídas o que se contradicen. */
 export async function getCurrentFx(settings: Settings): Promise<number | null> {
-  const now = new Date()
-  const { data } = await createAdminClient()
-    .from('fx_rates')
-    .select('rate, valid_from, valid_until')
-    .lte('valid_from', now.toISOString())
-    .order('valid_from', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  if (!data) return null
-  if (data.valid_until && new Date(data.valid_until) <= now) return null
-  const ageMin = (now.getTime() - new Date(data.valid_from).getTime()) / 60_000
-  if (ageMin > settings.rate_max_age_minutes) return null
-  return Number(data.rate)
+  if (settings.quotes_paused) return null
+  const market = await getMarketRate()
+  if (!market || market.disagreement) return null
+  return market.rate
 }
