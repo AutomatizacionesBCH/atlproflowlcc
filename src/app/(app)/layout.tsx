@@ -1,13 +1,18 @@
+import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { MobileNav } from '@/components/layout/MobileNav'
+import { createClient } from '@/lib/supabase/server'
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  // TODO(login): reemplazar por el email de la sesión de Supabase
-  const userEmail = 'cliente@ejemplo.cl'
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login') // defensa en profundidad: proxy.ts ya lo redirige
 
   return (
-    <div className="flex h-screen">
-      <div className="hidden lg:flex"><Sidebar userEmail={userEmail} /></div>
-      <main className="flex-1 overflow-y-auto">{children}</main>
+    <div className="flex h-screen flex-col lg:flex-row">
+      <div className="hidden lg:flex"><Sidebar userEmail={user.email ?? ''} /></div>
+      <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">{children}</main>
+      <MobileNav />
     </div>
   )
 }

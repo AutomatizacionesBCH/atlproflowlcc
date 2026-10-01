@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeftRight, Clock, Settings, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { signOutAction } from '@/app/login/actions'
 
 const NAV = [
   { href: '/exchange',    label: 'Nueva operación', icon: ArrowLeftRight },
@@ -57,11 +58,12 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
           <span className="flex size-9 items-center justify-center rounded-full bg-lime text-sm font-semibold text-brand">
             {userEmail.charAt(0).toUpperCase() || 'C'}
           </span>
-          <div className="min-w-0 flex-1 text-xs">
-            <p className="truncate font-medium">{userEmail}</p>
-            <p className="text-white/60">Cerrar sesión</p>
-          </div>
-          <LogOut className="size-4 text-white/60" aria-hidden />
+          <p className="min-w-0 flex-1 truncate text-xs font-medium">{userEmail}</p>
+          <form action={signOutAction}>
+            <button type="submit" aria-label="Cerrar sesión" title="Cerrar sesión" className="rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white">
+              <LogOut className="size-4" aria-hidden />
+            </button>
+          </form>
         </div>
       </div>
     </aside>
