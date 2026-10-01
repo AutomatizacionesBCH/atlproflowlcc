@@ -152,7 +152,7 @@ src/
 ## Estado actual
 
 - [x] Carpeta `ATL-Proflow/` creada con logos, íconos y este `CLAUDE.md`.
-- [x] Repo git propio (local; `ATL-Proflow/` ignorado en el `.gitignore` de ProFlow). Falta crear el remoto en GitHub (no hay `gh` en esta máquina).
+- [x] Repo git propio: https://github.com/AutomatizacionesBCH/atlproflowlcc (rama `main`). `ATL-Proflow/` está ignorado en el `.gitignore` de ProFlow.
 - [x] Scaffolding Next.js 16 + Tailwind 4 + Supabase, tokens de marca, sidebar y cotizador de muestra (`/exchange`, tasa fija de demo hasta tener `fx_rates`). `npm run build` y `lint` pasan.
 - [x] Proveedor KYC: Didit (standalone APIs).
 - [x] Login por email OTP (`/login`, `LoginForm`) + `proxy.ts` (sin sesión → `/login?redirectTo=…`, con `safeRedirect` contra open-redirect) + sidebar con sesión real y cerrar sesión + navegación móvil. Probado en navegador con Supabase simulado; **falta probar con Supabase real** (`.env.local`, plantilla de correo con `{{ .Token }}`, captcha Turnstile en Auth → Attack Protection y `NEXT_PUBLIC_TURNSTILE_SITE_KEY`).
