@@ -19,3 +19,18 @@ export const ACCOUNT_TYPES = [
   { value: 'vista', label: 'Cuenta vista / RUT' },
   { value: 'ahorro', label: 'Cuenta de ahorro' },
 ] as const
+
+// Transiciones que puede hacer el equipo. 'convertido' y 'descartado' son finales.
+export const NEXT_STATUS: Record<RequestStatus, RequestStatus[]> = {
+  cotizada: [],
+  pendiente: ['revisado', 'descartado'],
+  revisado: ['convertido', 'descartado'],
+  convertido: [],
+  descartado: [],
+}
+
+export const ACTION_LABEL: Partial<Record<RequestStatus, string>> = {
+  revisado: 'Tomar en proceso',
+  convertido: 'Marcar como completada',
+  descartado: 'Anular',
+}

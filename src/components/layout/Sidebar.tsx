@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeftRight, Clock, Settings, LogOut, TrendingUp } from 'lucide-react'
+import { ArrowLeftRight, Clock, Settings, LogOut, TrendingUp, Inbox } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOutAction } from '@/app/login/actions'
 
@@ -11,9 +11,12 @@ const NAV = [
   { href: '/exchange',    label: 'Nueva operación', icon: ArrowLeftRight },
   { href: '/operaciones', label: 'Mis operaciones', icon: Clock },
 ]
-const ADMIN_NAV = [{ href: '/admin/tasa', label: 'Tasa de cambio', icon: TrendingUp }]
+const ADMIN_NAV = [
+  { href: '/admin/solicitudes', label: 'Solicitudes', icon: Inbox },
+  { href: '/admin/tasa', label: 'Tasa de cambio', icon: TrendingUp },
+]
 
-export function Sidebar({ userEmail, isAdmin }: { userEmail: string; isAdmin: boolean }) {
+export function Sidebar({ userEmail, isAdmin, pending = 0 }: { userEmail: string; isAdmin: boolean; pending?: number }) {
   const pathname = usePathname()
 
   return (
@@ -38,6 +41,9 @@ export function Sidebar({ userEmail, isAdmin }: { userEmail: string; isAdmin: bo
             >
               <Icon className="size-4" aria-hidden />
               {label}
+              {href === '/admin/solicitudes' && pending > 0 && (
+                <span className="ml-auto rounded-full bg-lime px-2 py-0.5 text-xs font-semibold text-brand" aria-label={`${pending} pendientes`}>{pending}</span>
+              )}
             </Link>
           )
         })}
