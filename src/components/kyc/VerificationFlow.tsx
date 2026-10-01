@@ -15,7 +15,7 @@ const STEPS: { kind: StepKind; label: string }[] = [
 type Result = { status: 'aprobado' | 'en_revision' | 'rechazado'; message: string; attemptsLeft?: number }
 type Phase = 'intro' | 'capture' | 'sending' | 'done'
 
-export function VerificationFlow() {
+export function VerificationFlow({ next = '/exchange' }: { next?: string }) {
   const [phase, setPhase] = useState<Phase>('intro')
   const [step, setStep] = useState(0)
   const [photos, setPhotos] = useState<Record<StepKind, File | null>>({ front: null, back: null, selfie: null })
@@ -110,7 +110,7 @@ export function VerificationFlow() {
         </h1>
         <p className="text-ink-soft">{result.message}</p>
         {ok && (
-          <Link href="/exchange" className="flex h-14 w-full items-center justify-center rounded-full bg-lime text-lg font-semibold text-brand hover:brightness-95">
+          <Link href={next} className="flex h-14 w-full items-center justify-center rounded-full bg-lime text-lg font-semibold text-brand hover:brightness-95">
             Continuar con mi operación
           </Link>
         )}

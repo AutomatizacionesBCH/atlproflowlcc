@@ -25,11 +25,16 @@ export function suggestPayoutPct(amountUsd: number): number {
   return 81
 }
 
-/** USD necesarios para recibir `clp`: el payout depende del monto USD, así que se busca el tramo consistente. */
-export function usdFromClp(clp: number, fx: number): number {
-  for (const pct of [78, 79, 80, 81]) {
-    const usd = clp / (fx * (pct / 100))
-    if (suggestPayoutPct(usd) === pct) return usd
-  }
-  return clp / (fx * 0.81)
+const TZ = 'America/Santiago'
+
+/** dd-mm-aaaa hh:mm (hora de Chile) */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  const date = new Intl.DateTimeFormat('es-CL', { timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric' }).format(d).replaceAll('/', '-')
+  const time = new Intl.DateTimeFormat('es-CL', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
+  return `${date} ${time}`
+}
+
+export function isPast(iso: string | null | undefined): boolean {
+  return !!iso && new Date(iso).getTime() < Date.now()
 }

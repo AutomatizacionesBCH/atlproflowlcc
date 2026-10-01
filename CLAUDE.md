@@ -159,9 +159,11 @@ src/
 - [ ] Aplicar `supabase/031_customer_kyc.sql` (tablas `customer_profiles`/`kyc_verifications`) tras revisar el riesgo de roles; sin ella el login crea el usuario pero `/api/kyc/verify` fallará.
 - [ ] Bloquear confirmar operaciones si `kyc_status` ≠ `aprobado` (hoy `/exchange` → `/verificacion` siempre).
 - [x] Flujo KYC con UI propia (frente/dorso/selfie) + API `/api/kyc/verify` + `decideKyc`. Sin probar contra Didit real (faltan `DIDIT_API_KEY` y login).
-- [ ] Cotizador `/exchange` con `fx_rates` y reglas de payout.
-- [ ] Solicitud de operación → conversión a operación real en ProFlow OS.
-- [ ] Mis operaciones + comprobante.
+- [x] Cotizador `/exchange` con tasa real (`fx_rates`, ajustes en `portal_settings`: mín/máx USD, vigencia 5 min, antigüedad máx. de la tasa 3 h), aritmética entera en `lib/pricing.ts` (probada: 36.000 casos, nunca entrega menos de lo pedido), el servidor recalcula siempre. **Requiere migración 032.** El equipo publica la tasa con `insert into fx_rates (rate, source, note) values (…)` hasta que exista pantalla en ProFlow.
+- [x] Solicitud de operación (`operation_requests`, `source='portal'`): cotizada → confirmar con cuenta bancaria propia → `pendiente`. Confirmación atómica (UPDATE condicionado a estado y vigencia), exige KYC aprobado. Recotizar si venció.
+- [ ] Conversión de la solicitud a operación real en ProFlow OS + aviso al equipo.
+- [x] Mis operaciones (lista + detalle). [ ] Comprobante por operación completada.
+- [x] Páginas `/terminos` y `/privacidad` como marcador (texto legal pendiente de asesoría).
 - [ ] Términos, privacidad y política de reembolso revisados por asesoría legal.
 
 ## Decisiones abiertas
