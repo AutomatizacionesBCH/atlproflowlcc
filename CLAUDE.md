@@ -24,7 +24,7 @@ Navegación del cliente (sidebar): **Nueva operación · Mis operaciones · Ajus
 **Supabase Auth con email OTP** (`supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })` y `verifyOtp({ email, token, type: 'email' })`). Sin contraseñas ni NextAuth.
 
 - Plantilla de correo de Supabase configurada para enviar el **código de 6 dígitos** (`{{ .Token }}`), no solo el link. Asunto tipo "123456 es tu código".
-- Pantalla 1: campo email + "Continuar". Pantalla 2: input de código de 6 dígitos (autofocus, `autocomplete="one-time-code"`, reenviar con cooldown de 60 s).
+- Pantalla 1: campo email + "Continuar". Pantalla 2: input de código numérico de 6 a 10 dígitos (Supabase usa 8 por defecto; autofocus, `autocomplete="one-time-code"`, reenviar con cooldown de 60 s).
 - Rate limit de OTP en Supabase (Auth → Rate limits) y captcha (Turnstile/hCaptcha) en el formulario de email para evitar abuso.
 - Sesión por cookies vía `@supabase/ssr`. Protección de rutas en `proxy.ts` (Next 16 renombró `middleware.ts`): sin sesión → `/login`; sesión sin KYC aprobado → puede cotizar pero **no confirmar** operaciones (se le lleva a `/verificacion`).
 - **Separación de roles:** los clientes usan esta app; el equipo (administrador/operador) sigue en ProFlow OS con `profiles.role`. Los clientes NO deben tener fila en `profiles` con rol de equipo: usar tabla propia `customer_profiles`, y el trigger `handle_new_user` de ProFlow (migración 026) debe distinguir/ignorar a los clientes para no darles rol `operador` por defecto. **Revisar ese trigger antes de habilitar registro público.**

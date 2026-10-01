@@ -8,6 +8,9 @@ import { safeRedirect } from '@/lib/safe-redirect'
 import { TurnstileWidget } from './TurnstileWidget'
 
 const RESEND_SECONDS = 60
+// Supabase envía 6 u 8 dígitos según la configuración del proyecto: se acepta cualquier largo razonable.
+const CODE_MIN = 6
+const CODE_MAX = 10
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function friendly(message: string): string {
@@ -58,7 +61,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 
   async function verify(e: React.FormEvent) {
     e.preventDefault()
-    if (busy || code.length !== 6) return
+    if (busy || code.length < CODE_MIN) return
     setBusy(true)
     setError(null)
     const { error } = await createClient().auth.verifyOtp({
@@ -82,7 +85,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         <div>
           <h1 className="text-3xl font-semibold text-ink">Revisa tu correo</h1>
           <p className="mt-2 text-ink-soft">
-            Enviamos un código de 6 dígitos a <strong className="text-ink">{email}</strong>.
+            Enviamos un código a <strong className="text-ink">{email}</strong>.
           </p>
         </div>
 
@@ -93,11 +96,11 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
             ref={codeRef}
             inputMode="numeric"
             autoComplete="one-time-code"
-            maxLength={6}
+            maxLength={CODE_MAX}
             value={code}
-            onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            placeholder="000000"
-            className="mt-2 h-14 w-full rounded-xl border-2 border-line-strong text-center font-mono text-2xl tracking-[0.5em] focus:border-brand focus:outline-none"
+            onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, CODE_MAX))}
+            placeholder="••••••••"
+            className="mt-2 h-14 w-full rounded-xl border-2 border-line-strong text-center font-mono text-2xl tracking-[0.35em] focus:border-brand focus:outline-none"
           />
         </div>
 
@@ -105,7 +108,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 
         <button
           type="submit"
-          disabled={busy || code.length !== 6}
+          disabled={busy || code.length < CODE_MIN}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-brand font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-ink-faint"
         >
           {busy ? <Loader2 className="size-5 animate-spin" aria-hidden /> : 'Ingresar'}
