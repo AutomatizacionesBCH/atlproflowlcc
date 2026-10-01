@@ -159,8 +159,9 @@ src/
 - [ ] Aplicar `supabase/031_customer_kyc.sql` (tablas `customer_profiles`/`kyc_verifications`) tras revisar el riesgo de roles; sin ella el login crea el usuario pero `/api/kyc/verify` fallará.
 - [ ] Bloquear confirmar operaciones si `kyc_status` ≠ `aprobado` (hoy `/exchange` → `/verificacion` siempre).
 - [x] Flujo KYC con UI propia (frente/dorso/selfie) + API `/api/kyc/verify` + `decideKyc`. Sin probar contra Didit real (faltan `DIDIT_API_KEY` y login).
-- [x] Cotizador `/exchange` con tasa real (`fx_rates`, ajustes en `portal_settings`: mín/máx USD, vigencia 5 min, antigüedad máx. de la tasa 3 h), aritmética entera en `lib/pricing.ts` (probada: 36.000 casos, nunca entrega menos de lo pedido), el servidor recalcula siempre. **Requiere migración 032.** El equipo publica la tasa con `insert into fx_rates (rate, source, note) values (…)` hasta que exista pantalla en ProFlow.
+- [x] Cotizador `/exchange` con tasa real (`fx_rates`, ajustes en `portal_settings`: mín/máx USD, vigencia 5 min, antigüedad máx. de la tasa 3 h), aritmética entera en `lib/pricing.ts` (probada: 36.000 casos, nunca entrega menos de lo pedido), el servidor recalcula siempre. **Requiere migración 032.** La tasa se publica en `/admin/tasa` (solo emails de `portal_admins`, migración 033): muestra la vigente, sugiere el dólar observado de mindicador.cl (solo referencia, nunca se publica sola), pide confirmación si varía >3 % y guarda quién la publicó.
 - [x] Solicitud de operación (`operation_requests`, `source='portal'`): cotizada → confirmar con cuenta bancaria propia → `pendiente`. Confirmación atómica (UPDATE condicionado a estado y vigencia), exige KYC aprobado. Recotizar si venció.
+- [x] Administración de la tasa (`/admin/tasa`). [ ] Administración de solicitudes (ver, revisar, convertir en operación).
 - [ ] Conversión de la solicitud a operación real en ProFlow OS + aviso al equipo.
 - [x] Mis operaciones (lista + detalle). [ ] Comprobante por operación completada.
 - [x] Páginas `/terminos` y `/privacidad` como marcador (texto legal pendiente de asesoría).

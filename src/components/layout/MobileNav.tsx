@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeftRight, Clock, Settings } from 'lucide-react'
+import { ArrowLeftRight, Clock, Settings, TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ITEMS = [
@@ -10,12 +10,13 @@ const ITEMS = [
   { href: '/operaciones', label: 'Operaciones', icon: Clock },
   { href: '/ajustes', label: 'Ajustes', icon: Settings },
 ]
+const ADMIN_ITEM = { href: '/admin/tasa', label: 'Tasa', icon: TrendingUp }
 
-export function MobileNav() {
+export function MobileNav({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname()
   return (
     <nav aria-label="Principal" className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-white lg:hidden">
-      {ITEMS.map(({ href, label, icon: Icon }) => {
+      {(isAdmin ? [...ITEMS, ADMIN_ITEM] : ITEMS).map(({ href, label, icon: Icon }) => {
         const active = pathname.startsWith(href)
         return (
           <Link

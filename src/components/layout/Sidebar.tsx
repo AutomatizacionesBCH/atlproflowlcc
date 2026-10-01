@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeftRight, Clock, Settings, LogOut } from 'lucide-react'
+import { ArrowLeftRight, Clock, Settings, LogOut, TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOutAction } from '@/app/login/actions'
 
@@ -11,8 +11,9 @@ const NAV = [
   { href: '/exchange',    label: 'Nueva operación', icon: ArrowLeftRight },
   { href: '/operaciones', label: 'Mis operaciones', icon: Clock },
 ]
+const ADMIN_NAV = [{ href: '/admin/tasa', label: 'Tasa de cambio', icon: TrendingUp }]
 
-export function Sidebar({ userEmail }: { userEmail: string }) {
+export function Sidebar({ userEmail, isAdmin }: { userEmail: string; isAdmin: boolean }) {
   const pathname = usePathname()
 
   return (
@@ -23,7 +24,7 @@ export function Sidebar({ userEmail }: { userEmail: string }) {
       </div>
 
       <nav aria-label="Principal" className="flex-1 space-y-1 p-4">
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {(isAdmin ? [...NAV, ...ADMIN_NAV] : NAV).map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href)
           return (
             <Link
