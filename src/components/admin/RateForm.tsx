@@ -10,7 +10,7 @@ export function RateForm({ suggested }: { suggested: number | null }) {
   const [pending, start] = useTransition()
   const [raw, setRaw] = useState('')
   const [note, setNote] = useState('')
-  const [jump, setJump] = useState<number | null>(null)
+  const [jump, setJump] = useState<{ pct: number; versus: 'anterior' | 'observado' } | null>(null)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   const rate = Number(raw.replace(',', '.')) || 0
@@ -19,7 +19,7 @@ export function RateForm({ suggested }: { suggested: number | null }) {
     setMsg(null)
     start(async () => {
       const res = await publishRateAction({ rate, note, confirmJump })
-      if ('needsConfirm' in res) return setJump(res.pct)
+      if ('needsConfirm' in res) return setJump({ pct: res.pct, versus: res.versus })
       if ('error' in res) return setMsg({ ok: false, text: res.error })
       setJump(null); setRaw(''); setNote('')
       setMsg({ ok: true, text: 'Tasa publicada. Ya está vigente para los clientes.' })
@@ -52,7 +52,7 @@ export function RateForm({ suggested }: { suggested: number | null }) {
 
       {jump !== null && (
         <div role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-warning">
-          Esta tasa varía <strong>{jump > 0 ? '+' : ''}{jump.toFixed(1)}%</strong> respecto a la anterior. ¿Es correcto?
+          Esta tasa está <strong>{jump.pct > 0 ? '+' : ''}{jump.pct.toFixed(1)}%</strong> {jump.versus === 'observado' ? 'respecto al dólar observado de hoy' : 'respecto a la tasa anterior'}. ¿Es correcto?
           <button type="button" onClick={() => publish(true)} disabled={pending} className="mt-3 block h-10 rounded-lg bg-warning px-4 font-medium text-white">
             Sí, publicar de todos modos
           </button>
