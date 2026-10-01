@@ -4,14 +4,17 @@ import { revalidatePath } from 'next/cache'
 import { getCurrentFx, getSettings, requireCustomer } from '@/lib/portal/server'
 import { quoteFromUsd } from '@/lib/pricing'
 import { ACCOUNT_TYPES, BANKS } from '@/lib/status'
+import { notifyTeamNewRequest } from '@/lib/email/notify'
+import { formatCLP, formatUSD } from '@/lib/utils'
 
 type Result = { error: string } | { ok: true } | { next: string }
 
 export async function confirmOperationAction(input: {
-  id: string; bank: string; accountType: string; accountNumber: string; accept: boolean
+  id: string; bank: string; accountType: string; accountNumber: string; accept: boolean; ownAccount: boolean
 }): Promise<Result> {
   const { user, admin } = await requireCustomer()
   if (!input.accept) return { error: 'Debes aceptar la tasa y las condiciones para continuar.' }
+  if (!input.ownAccount) return { error: 'Debes declarar que la cuenta es de tu titularidad.' }
 
   const bank = BANKS.find(b => b === input.bank)
   const type = ACCOUNT_TYPES.find(t => t.value === input.accountType)
@@ -21,7 +24,7 @@ export async function confirmOperationAction(input: {
 
   const [{ data: profile }, { data: req }] = await Promise.all([
     admin.from('customer_profiles').select('kyc_status, full_name, rut, email').eq('id', user.id).single(),
-    admin.from('operation_requests').select('id, status, quote_expires_at').eq('id', input.id).eq('customer_id', user.id).maybeSingle(),
+    admin.from('operation_requests').select('id, status, quote_expires_at, amount_usd, quoted_clp').eq('id', input.id).eq('customer_id', user.id).maybeSingle(),
   ])
   if (!req) return { error: 'No encontramos esta operación.' }
   if (req.status !== 'cotizada') return { error: 'Esta operación ya fue confirmada.' }
@@ -51,6 +54,12 @@ export async function confirmOperationAction(input: {
   }).eq('id', input.id).eq('customer_id', user.id).eq('status', 'cotizada')
     .gt('quote_expires_at', new Date().toISOString()).select('id')
   if (error || !updated?.length) return { error: 'No pudimos confirmar la operación. Vuelve a cotizar.' }
+
+  // Aviso al equipo (mejor esfuerzo: nunca hace fallar la confirmación).
+  await notifyTeamNewRequest({
+    id: input.id, fullName: profile.full_name, email: profile.email,
+    usd: formatUSD(Number(req.amount_usd)), clp: formatCLP(Number(req.quoted_clp)), bank,
+  })
 
   revalidatePath('/operaciones')
   return { ok: true }

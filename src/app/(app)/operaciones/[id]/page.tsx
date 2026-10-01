@@ -59,6 +59,11 @@ export default async function DetalleOperacion({ params }: { params: Promise<{ i
           saved={accounts ?? []}
         />
       )}
+      {status === 'convertido' && (
+        <Link href={`/operaciones/${r.id}/comprobante`} className="flex h-12 items-center justify-center rounded-lg bg-brand font-medium text-white hover:bg-brand-hover">
+          Ver comprobante
+        </Link>
+      )}
       {status === 'pendiente' && (
         <p className="rounded-2xl bg-brand-muted p-5 text-sm text-brand">
           Recibimos tu solicitud. Nuestro equipo la está revisando y te avisaremos por correo cuando esté lista.

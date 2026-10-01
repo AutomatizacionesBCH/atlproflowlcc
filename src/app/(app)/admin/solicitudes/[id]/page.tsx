@@ -26,9 +26,10 @@ export default async function DetalleSolicitud({ params }: { params: Promise<{ i
 
   const { data: r } = await admin.from('operation_requests').select('*').eq('id', id).maybeSingle()
   if (!r) notFound()
-  const [{ data: profile }, { data: events }] = await Promise.all([
+  const [{ data: profile }, { data: events }, { data: lastKyc }] = await Promise.all([
     r.customer_id ? admin.from('customer_profiles').select('kyc_status, full_name, rut, email').eq('id', r.customer_id).maybeSingle() : Promise.resolve({ data: null }),
     admin.from('request_events').select('id, actor, from_status, to_status, note, created_at').eq('request_id', id).order('created_at', { ascending: false }),
+    r.customer_id ? admin.from('kyc_verifications').select('provider').eq('customer_id', r.customer_id).order('created_at', { ascending: false }).limit(1).maybeSingle() : Promise.resolve({ data: null }),
   ])
   const status = r.status as RequestStatus
   const accountType = ACCOUNT_TYPES.find(t => t.value === r.transfer_account_type)?.label ?? r.transfer_account_type
@@ -47,6 +48,12 @@ export default async function DetalleSolicitud({ params }: { params: Promise<{ i
         </div>
         <StatusBadge status={status} />
       </div>
+
+      {lastKyc?.provider === 'prueba-admin' && (
+        <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-warning">
+          <strong>Modo pruebas:</strong> la identidad de esta cuenta fue marcada manualmente por un administrador, no verificada por el proveedor. No transfieras dinero.
+        </p>
+      )}
 
       {!kycOk && r.source === 'portal' && (
         <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-warning">

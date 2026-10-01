@@ -162,8 +162,10 @@ src/
 - [x] Cotizador `/exchange` con tasa real (`fx_rates`, ajustes en `portal_settings`: mín/máx USD, vigencia 5 min, antigüedad máx. de la tasa 3 h), aritmética entera en `lib/pricing.ts` (probada: 36.000 casos, nunca entrega menos de lo pedido), el servidor recalcula siempre. **Requiere migración 032.** La tasa se publica en `/admin/tasa` (solo emails de `portal_admins`, migración 033): muestra la vigente, sugiere el dólar observado de mindicador.cl (solo referencia, nunca se publica sola), pide confirmación si varía >3 % y guarda quién la publicó.
 - [x] Solicitud de operación (`operation_requests`, `source='portal'`): cotizada → confirmar con cuenta bancaria propia → `pendiente`. Confirmación atómica (UPDATE condicionado a estado y vigencia), exige KYC aprobado. Recotizar si venció.
 - [x] Administración de la tasa (`/admin/tasa`). [x] Administración de solicitudes (`/admin/solicitudes`: lista por estado con contadores, detalle con cuenta de destino y estado de identidad, cambios de estado con bitácora en `request_events`, migración 034; globo con pendientes en el menú). Estados que puede aplicar el equipo: pendiente → en proceso → completada, o anular con motivo.
-- [ ] Conversión de la solicitud a operación real en ProFlow OS + aviso al equipo.
-- [x] Mis operaciones (lista + detalle). [ ] Comprobante por operación completada.
+- [x] Aviso por correo al equipo al confirmar una solicitud (`lib/email/notify.ts`, mejor esfuerzo; variables `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `TEAM_NOTIFY_EMAILS`, `APP_URL`).
+- [x] **Modo pruebas de identidad** (`ENABLE_KYC_TEST_MODE=true` + administrador): marca la cuenta como verificada sin Didit; queda como provider `prueba-admin` y el detalle de la solicitud lo advierte. **Apagar antes de abrir a clientes reales.**
+- [ ] Conversión de la solicitud a operación real en ProFlow OS (puente entre proyectos Supabase).
+- [x] Mis operaciones (lista + detalle). [x] Comprobante imprimible/PDF (`/operaciones/[id]/comprobante`, solo operaciones completadas). [x] Ajustes (datos, teléfono, verificación, cuentas guardadas). [x] Declaración de titularidad de la cuenta al confirmar.
 - [x] Páginas `/terminos` y `/privacidad` como marcador (texto legal pendiente de asesoría).
 - [ ] Términos, privacidad y política de reembolso revisados por asesoría legal.
 

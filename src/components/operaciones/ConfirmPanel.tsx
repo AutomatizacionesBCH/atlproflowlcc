@@ -35,6 +35,7 @@ export function ConfirmPanel({ id, expiresAt, kycApproved, holderName, holderRut
   const [type, setType] = useState(first?.account_type ?? '')
   const [number, setNumber] = useState(first?.account_number ?? '')
   const [accept, setAccept] = useState(false)
+  const [own, setOwn] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const mm = String(Math.floor(left / 60)).padStart(1, '0')
@@ -53,7 +54,7 @@ export function ConfirmPanel({ id, expiresAt, kycApproved, holderName, holderRut
     e.preventDefault()
     setError(null)
     start(async () => {
-      const res = await confirmOperationAction({ id, bank, accountType: type, accountNumber: number, accept })
+      const res = await confirmOperationAction({ id, bank, accountType: type, accountNumber: number, accept, ownAccount: own })
       if ('error' in res) return setError(res.error)
       router.refresh()
     })
@@ -129,13 +130,18 @@ export function ConfirmPanel({ id, expiresAt, kycApproved, holderName, holderRut
       </div>
 
       <label className="flex items-start gap-3 text-sm">
+        <input type="checkbox" checked={own} onChange={e => setOwn(e.target.checked)} className="mt-1 size-4 accent-[var(--color-brand)]" />
+        <span>Declaro que esta cuenta está a mi nombre y RUT.</span>
+      </label>
+
+      <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" checked={accept} onChange={e => setAccept(e.target.checked)} className="mt-1 size-4 accent-[var(--color-brand)]" />
         <span>Acepto la tasa mostrada y los <Link href="/terminos" className="underline">términos</Link>. Entiendo que las operaciones confirmadas son finales.</span>
       </label>
 
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
 
-      <button type="submit" disabled={pending || !filled || !accept}
+      <button type="submit" disabled={pending || !filled || !accept || !own}
         className="flex h-12 w-full items-center justify-center rounded-lg bg-brand font-medium text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-ink-faint">
         {pending ? <Loader2 className="size-5 animate-spin" aria-hidden /> : 'Confirmar operación'}
       </button>

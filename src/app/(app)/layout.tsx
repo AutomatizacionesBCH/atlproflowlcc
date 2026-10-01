@@ -17,9 +17,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen flex-col lg:flex-row">
-      <div className="hidden lg:flex"><Sidebar userEmail={user.email ?? ''} isAdmin={isAdmin} pending={pending} /></div>
+      <div className="hidden lg:flex print:hidden"><Sidebar userEmail={user.email ?? ''} isAdmin={isAdmin} pending={pending} /></div>
       <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">{children}</main>
-      <MobileNav isAdmin={isAdmin} pending={pending} />
+      <div className="print:hidden"><MobileNav isAdmin={isAdmin} pending={pending} /></div>
     </div>
   )
 }
